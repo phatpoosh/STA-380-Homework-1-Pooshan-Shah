@@ -1,0 +1,805 @@
+---
+title: "STA 380 Homework 1"
+author: "Pooshan Shah"
+date: "August 8, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE}
+library(mosaic)
+library(quantmod)
+library(foreach)
+library(corrplot)
+library(cluster)
+library(fpc)
+
+
+rnorm(10)
+rnorm(10)
+
+my_favorite_seed = 1234567
+set.seed(my_favorite_seed)
+rnorm(10)
+set.seed(my_favorite_seed)
+rnorm(10)
+
+```
+
+## Problem A
+
+
+## Problem B
+
+
+## Exploratory Analysis: green buildings
+
+Summary of Green Data:
+```{r, echo=FALSE, message=FALSE}
+
+library(mosaic)
+library(corrplot)
+
+green = read.csv('greenbuildings.csv')
+summary(green)
+
+```
+
+Hypothesis: I do not agree with the approach the stats-guru took in finding the answer to the problem. There are other factors involved that could affect the rent and green status of a building. Some factors I believe that could be significant are: cluster_rent, gas/electricity costs, net, amenities, class, size, and leasing rate.
+
+Extract the buildings with green ratings
+```{r, message=FALSE,warning=FALSE}
+green_only = subset(green, green_rating==1)
+not_green = subset(green, green_rating ==0)
+```
+
+### Basic EDA
+
+Summary of Green Data Rent
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+summary(green$Rent)
+```
+
+Summary of only Green Buildings' Rent
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+summary(green_only$Rent)
+```
+
+Summary of non-Green Buildings' Rent
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+summary(not_green$Rent)
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+
+par(mfrow=c(1,3))
+boxplot(green$Rent, col = 'blue', outline=FALSE, main="All Rents")
+boxplot(green_only$Rent,col='green', outline=FALSE, main= "Green Rent" )
+boxplot(not_green$Rent, col='red', outline=FALSE, main="Not Green Rent")
+
+```
+
+Comments: Here we get a sense of the green data as a whole, and once we split the data into green buildings, and non-green buildings, we can see holistically how they differ at the rent level. A difference is see-able between green and non-green rent.
+
+
+
+```{r, message=FALSE,warning=FALSE}
+summary(green_only$size)
+summary(not_green$size)
+
+```
+
+Comments: the size of this bulding will be close to the median of all green buildings and between the mean and 3rd quartile for non-green.
+
+
+
+```{r, message=FALSE,warning=FALSE}
+summary(green_only$age)
+
+```
+
+Comments: from this summary of green buildings, we see that the median age for a green building is around 22, so the stats-guru might be overestimating the age of the upcoming building at 30 years. 
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+par(mfrow=c(1,1))
+green_only_full <- na.omit(green_only)
+corrplot(cor(green_only_full[-1]), method='circle')
+```
+
+Comments: this helps to show which variables might be correlated to get a better idea of which variables to look at. We see: class, net, cold/hot and total days, and electricity.
+
+
+
+
+
+#### Net
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+
+#Net
+#see a pretty big difference
+
+# both green and non green have big differences in rent based on net
+#seems like rent wise, we should split the groups based on net as well
+boxplot(green_only$Rent[green_only$net== 0], green_only$Rent[green_only$net== 1],horizontal = TRUE, names = c("Included","Not-Included"), main="Green Net: Utilities in Rent", outline=FALSE, xlab='Rent $', col='purple')
+boxplot(not_green$Rent[not_green$net== 0], not_green$Rent[not_green$net== 1],horizontal = TRUE, names = c("Included","Not-Included"), main="Non-Green Net: Utilities in Rent", outline=FALSE, xlab='Rent $', col='yellow')
+```
+
+Comments: with Net, we see a big difference- both green and non green have big differences in rent based on net. Seems like rent wise, we should split the groups based on net as well.
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+boxplot(green_only$Rent[green_only$net== 1], not_green$Rent[not_green$net== 1], horizontal = TRUE, names = c("Green Utilities Not Included","Non-Green Utilities Not Included"), main="Rents: Green Net", outline=FALSE, col = 'red')
+
+```
+
+Comments: we see how rent is almost the same for both green and non-green when not including utilities- which is expected
+
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+
+boxplot(green_only$Rent[green_only$net== 0], not_green$Rent[not_green$net== 0], names = c("Green Utilities Not Included","Non-Green Utilities Not Included"), horizontal = TRUE, main="Rents: Net = 0", outline=FALSE, col ='orange')
+
+```
+
+Comments: this is could be a better indicator of the difference between green and non-green rents
+
+
+
+
+
+#### Amenities
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+#Amenities
+
+boxplot(green_only$Rent[green_only$amenities== 1], green_only$Rent[green_only$amenities== 0],horizontal = TRUE, names = c("Included","Not-Included"), main="Green: Amenities", outline=FALSE, xlab='Rent $', col='blue')
+boxplot(not_green$Rent[not_green$amenities== 1], not_green$Rent[not_green$amenities== 0],horizontal = TRUE, names = c("Included","Not-Included"), main="Non-Green: Amenities", outline=FALSE, xlab='Rent $', col='light blue')
+
+
+```
+
+Comments: very similar in rent for both- no significant enough through graph
+
+
+
+
+
+#### Cluster-Rate
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+par(mfrow=c(1,2))
+plot(green_only$cluster_rent, green_only$Rent, main='Green: Cl vs R', ylab='Rent', xlab='Cluster Rent' )
+plot(not_green$cluster_rent, not_green$Rent, main='Non-Green: Cl vs R', ylab='Rent', xlab='Cluster Rent')
+
+```
+
+Comments: graphs show a positive correlation for both green and non-green. The slope for green buildings looks a lot steeper than for non-green. This deinitely could affect the rent price based on which cluster the green building is in. Could be that the higher the cluster price, the greater the difference between the green rent and cluster rent.
+
+
+
+
+
+#### Cluster Rate and Utility Costs
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+#cluster rate and utility costs
+
+plot(green$Electricity_Costs,green$cluster_rent,  main='Electricity vs. Cluster Rent')
+plot(green$Gas_Costs, green$cluster_rent, main='Gas vs. Cluster Rent' )
+```
+
+Comments: there seems to be some positive correlation between cluster rent and electricity cost but not really any for gas costs.
+
+
+
+
+
+#### Leasing
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+par(mfrow=c(1,1))
+
+boxplot(green_only$leasing_rate, not_green$leasing_rate, names = c("Green Only","Not Green"), main="Leasing Rate", horizontal= TRUE, col='green',outline = FALSE)
+
+
+```
+
+Comments: leasing rate seems to be higher for green buildings. This may confirm that green buildings are more attractive to work in, and also the developer may not have to worry about empty space just sitting there as much as non-green buildings.
+
+
+
+
+
+
+#### Class A,B,C
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+par(mfrow=c(2,1))
+boxplot(green_only$Rent[green_only$class_a== 1], green_only$Rent[green_only$class_b== 0],green_only$Rent[green_only$class_b== 0 & green_only$class_a== 0],horizontal = TRUE, names = c("Class A","Class B", "Class C"),las=2, main="Green: Classes", outline=FALSE, xlab='Rent $', col='green')
+boxplot(not_green$Rent[not_green$class_a== 1], not_green$Rent[not_green$class_b== 0],not_green$Rent[not_green$class_b== 0 & not_green$class_a== 0],horizontal = TRUE, names = c("Class A","Class B", "Class C"), las =2,main="Non-Green: Classes", outline=FALSE, xlab='Rent $', col='dark green')
+
+```
+
+Comments: classes don't seem to be very different for green except for class c which is very surprising (could just be an anomaly), but since the pattern isn't apparent, we will not worry about it. But you can easily see positive correlation for non-green classes.
+
+
+
+
+
+
+#### Size
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+#size
+par(mfrow=c(1,1))
+plot(green_only$size,green_only$Rent,  main='Green: Size vs. Rent', xlab='Size', ylab='Rent')
+plot(not_green$size,not_green$Rent,  main='Non-Green: Size vs. Rent', xlab='Size', ylab='Rent')
+```
+
+Comments: not really any correlation for all buildings- mostly clustered below 250,000 sqrfeet
+
+
+
+
+
+
+### More analysis based on EDA
+Using Net to further subset the data into: green_only_net and not_green_net.
+These include the buildings that do include utilities in the rent.
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+## More analysis based on EDA
+green_only_net = subset(green_only, net==0)
+not_green_net = subset(not_green, net==0)
+```
+
+```{r, message=FALSE,warning=FALSE}
+summary(green_only_net$Rent)
+```
+
+```{r, message=FALSE,warning=FALSE}
+summary(not_green_net$Rent)
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+
+boxplot(green_only_net$Rent, not_green_net$Rent,horizontal = TRUE, names = c("Green","Non-Green"), main="Rents: Net = 0", outline=FALSE, xlab='Rent $', col='green')
+```
+
+Comments: given the summaries and box plots, we can use these to furter deduce a more accurate difference in overall rent prices.
+
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+#this probably isn't as good as it weighs every datapoint the same- so outliers and other external effects
+#have a greater affect
+rent_diff = green_only_net$Rent - green_only_net$cluster_rent
+
+plot(rent_diff, ylab='Rent Minus Cluster Rent', main='Residuals of Rent - Cluster Rent')
+
+```
+
+Summary of Rent - Cluster Rent from the green_only_net data
+```{r, message=FALSE,warning=FALSE}
+summary(rent_diff)
+
+```
+
+Comments: this is another way we could find the difference in the rent prices but this seems a little more bias as it weighs every data point the same- so outliers and other external effects have a stronger effect. This method is more appealing as it accounts for cluster similarities instead of just being general. Location plays an important role in rent and the clusters are the only source of location data. 
+
+
+####Let's try bootstrapping the rent difference for a more robust answer
+
+Bootstrap the Rent-Cluster Rent median for the most subsetted table: green_only where net = 0
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+####
+# Bootstrap the median
+####
+#median(green_only_net$Rent)
+# Now repeat 2500 times
+boot_rent = do(2500)*{
+  median(resample(rent_diff))
+}
+
+hist(boot_rent$result, 30, col='dark green')
+summary(boot_rent)
+
+```
+
+
+We subtracted the subsetted green building cluster rent from the green building actual rent and bootstrapped the median. In this, we leveraged the cluster rent which I believe is more correlated to the green building rent than the overall mean of the non-green building rent. 
+
+In conclusion, I do not agree with how the stats-guru got his answer. From our analysis, we see that there are multiple other variables involved in significantly changing the rent of a green building such as presence of utilitie and their prices, cluster rent, hot/cold days (from correlation plot), etc. In this analysis, we saw how net and cluster rent were correlated to the green building rent and we used this knowledge to help us find more evidence of a more accurate profit margin. The analysis can be improved even more by narrowing down our sample to more relevant and similar types of buildings of which we can compare. It would also be a lot of help to get more data from the developer on the type of building she wants to make regarding utilities, class, cluster, etc. It would be the most help to us to find the location of each cluster presented in the data in order to figure out which cluster is closest to the developer's building's location.
+
+
+
+## Bootstrapping
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+#### Now use a bootstrap approach
+#### With more stocks
+
+mystocks = c("LQD", "TLT", "SPY", "EEM", "VNQ")
+myprices = getSymbols(mystocks, from = "1990-01-01")
+
+
+# A chunk of code for adjusting all stocks
+# creates a new object addind 'a' to the end
+# For example, WMT becomes WMTa, etc
+for(ticker in mystocks) {
+  expr = paste0(ticker, "a = adjustOHLC(", ticker, ")")
+  eval(parse(text=expr))
+}
+
+# Combine all the returns in a matrix
+all_returns = cbind(	ClCl(LQDa),
+                     ClCl(TLTa),
+                     ClCl(SPYa),
+                     ClCl(EEMa),
+                     ClCl(VNQa))
+
+all_returns = as.matrix(na.omit(all_returns))
+head(all_returns)
+tail(all_returns)
+
+
+```
+Comment: We can see that after cleaning, the data starts at: 9/30/2004 and ends: 8/7/2018
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+pairs(all_returns)
+
+```
+
+Comment: From this graph we can see the various correlation between the stocks. We can see that the stocks which produce a relatively flat or horizontal line means that one of the variables is more immune to change (ex. LQD)-- helpful for portfolio 2 because that means the stock is low risk and low return. We see a positive correlation between VNQ and SPY which might be helpful in the portfolio 3 for high risk and high return. 
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+plot(all_returns[,1], type='l', xlab='day', ylab ='returns',main='Returns for LQD')
+
+summary(all_returns[,1])
+```
+Comment:
+**Graph**
+First thing that jumps out at me is the high and low around day: 1000, there was a high positive return as well as a relatively low negative return. However, the remaining points seem to be stable and within a small margin. Looks like a safe stock.  
+**Summary**
+To steer clear of outliers, I look mainly at the median and 1st/3rd Quartiles for the returns. Median is small and quartile range is minimum. Safe stock.
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+plot(all_returns[,2], type='l', xlab='day', ylab ='returns',main='Returns for TLT')
+
+summary(all_returns[,2]) 
+
+```
+Comment: 
+**Graph**
+The graph makes the stock look as if it is volatile, but in fact, it is relatively stable looking at the y-value. The highest it goes is 0.04 return and lowest is -0.04. Looks like a safe stock.  
+**Summary**
+Median is small and quartile range is minimum. Safe stock.
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+plot(all_returns[,3], type='l', xlab='day', ylab ='returns',main='Returns for SPY')
+
+summary(all_returns[,3]) 
+
+```
+
+Comment: 
+**Graph**
+Between day 100 and 1700ish there seems to be some more extreme high and low returns compared to other graphs. This stock seems change a lot but not too much as it is mostly margined between -0.05 and 0.05. Seems like could be either safe or risky. 
+**Summary**
+Median is larger but quartile range is still relatively small. Safe stock.
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+
+plot(all_returns[,4], type='l', xlab='day', ylab ='returns',main='Returns for EEM')
+summary(all_returns[,4]) 
+
+```
+Comment: 
+**Graph**
+It is hard to tell exactly how the non-outlier days are doing on this graph but when looking at its subsets (ex. days: 1500-3400), the returns are relatively high and low-- going above 0.05 and below -0.05. Seems like more of a riskier stock.
+**Summary**
+Median is large. Quartile range is much larger comparitively on both negative and positive sides. Risky stock. 
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+par(mfrow=c(1,1))
+plot(all_returns[,5], type='l', xlab='day', ylab ='returns',main='Returns for VNQ')
+summary(all_returns[,5]) 
+
+```
+Comment: 
+**Graph**
+Similar to EEM, this stock has more static and thus seems more volatile. Seems like a riskier stock. 
+**Summary**
+Similar median to SPY but larger quartile range. Risky stock. 
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+chartSeries(LQDa, type="line", subset="last 15 years")
+chartSeries(TLTa, type="line", subset="last 15 years")
+chartSeries(SPYa, type="line", subset="last 15 years")
+chartSeries(EEMa, type="line", subset="last 15 years")
+chartSeries(VNQa, type="line", subset="last 15 years")
+```
+
+Comment: These chart series graphs show the prices over time. All the graphs seems to match up to my hypothesis described in the previous return graphs except for SPY. The riskier stocks show steep rises and falls of the price. What's interesting for SPY is that while it looks like a smoother curve, the range for the y-values are 250. There seems to be a solid increase in price but the volatility could be large. I will keep it as a safe stock. 
+
+
+
+### Portfolio 1
+
+This portfolio splits the wealth and weight evenly among the stocks at 0.2 each.
+Initial Wealth: $100,000
+Runs 5000 times.
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+#portfolio 1
+initial_wealth = 100000
+sim1 = foreach(i=1:5000, .combine='rbind') %do% {
+  total_wealth = initial_wealth
+  weights = c(0.2, 0.2, 0.2, 0.2, 0.2)
+  holdings = weights * total_wealth
+  n_days = 20
+  wealthtracker = rep(0, n_days)
+  for(today in 1:n_days) {
+    return.today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = weights * total_wealth
+    holdings = holdings + holdings*return.today
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+  }
+  wealthtracker
+}
+
+#head(sim1)
+#hist(sim1[,n_days], 50)
+
+```
+
+Mean wealth: `r mean(sim1[,n_days])`
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+# Profit/loss
+hist(sim1[,n_days]- initial_wealth, breaks=30)
+```
+
+Comment: Graph shows the distribution of returns over the 5000 runs. Mean seems to be greater than 0 with many outlier in the 1000s positive.
+
+Calculate 5% value at risk `r quantile(sim1[,n_days], 0.05) - initial_wealth`
+Calculate 95% value at risk `r quantile(sim1[,n_days], 0.95) - initial_wealth`
+
+
+### Portfolio 2
+
+This portfolio leverages something that seems safer than the even split, comprising investments in at least three classes.
+Stocks used: LQD: 0.35, TLT: 0.3, SPY: 0.35
+I selected these weights after many instances of trial and error to find the minimum 5% at risk number.
+Initial Wealth: $100,000
+Runs 5000 times.
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+#portfolio 1
+initial_wealth = 100000
+sim1 = foreach(i=1:5000, .combine='rbind') %do% {
+  total_wealth = initial_wealth
+  weights = c(0.35, 0.3, 0.35, 0.0, 0.0)
+  holdings = weights * total_wealth
+  n_days = 20
+  wealthtracker = rep(0, n_days)
+  for(today in 1:n_days) {
+    return.today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = weights * total_wealth
+    holdings = holdings + holdings*return.today
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+  }
+  wealthtracker
+}
+
+#head(sim1)
+#hist(sim1[,n_days], 50)
+
+```
+
+Mean wealth: `r mean(sim1[,n_days])`
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+# Profit/loss
+hist(sim1[,n_days]- initial_wealth, breaks=30)
+```
+
+Comment: Graph shows the distribution of returns over the 5000 runs. Mean seems to be very close to 0 with a short distribution from about -$5000 to $7000.
+
+Calculate 5% value at risk `r quantile(sim1[,n_days], 0.05) - initial_wealth`
+Calculate 95% value at risk `r quantile(sim1[,n_days], 0.95) - initial_wealth`
+
+
+### Portfolio 3
+
+This portfolio leverages something more aggressive, comprising investments in at least two classes/assets. By more aggressive, I mean a portfolio that looks like it has a chance at higher returns, but also involves more risk of loss.
+
+Stocks used: EEM: 0.8, VNQ: 0.2
+I selected these weights after many instances of trial and error to find the maximum lowest 5% and highest 95% at risk number.
+Initial Wealth: $100,000
+Runs 5000 times.
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+#portfolio 1
+initial_wealth = 100000
+sim1 = foreach(i=1:5000, .combine='rbind') %do% {
+  total_wealth = initial_wealth
+  weights = c(0.35, 0.3, 0.35, 0.0, 0.0)
+  holdings = weights * total_wealth
+  n_days = 20
+  wealthtracker = rep(0, n_days)
+  for(today in 1:n_days) {
+    return.today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = weights * total_wealth
+    holdings = holdings + holdings*return.today
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+  }
+  wealthtracker
+}
+
+#head(sim1)
+#hist(sim1[,n_days], 50)
+
+```
+
+Mean wealth: `r mean(sim1[,n_days])`
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+# Profit/loss
+hist(sim1[,n_days]- initial_wealth, breaks=30)
+```
+
+Comment: Graph shows the distribution of returns over the 5000 runs. Mean seems to be above 0 with a large distribution from about -$50,000 to $200,000.
+
+Calculate 5% value at risk `r quantile(sim1[,n_days], 0.05) - initial_wealth`
+Calculate 95% value at risk `r quantile(sim1[,n_days], 0.95) - initial_wealth`
+
+
+### Comparison of Portfolios:
+
+Looking at the portfolios, we see exactly what we expect from the returns:
+Portfolio 1 (even): +$1,200.2
+Portfolio 2 (safe): +$659
+Portfolio 3 (risky): +2,817.5
+All of the portfolios gave us a positive return back with 2 being the lowest and 3 being the highest. Looking at the 5% and 95% risk, each portfolio essentially doubles its risk and returns as it gets riskier. Risk: -$3000(P2) to -$6000(P1) to -$11,000(P3). Returns: $4000(P2) to $8000(P1) to $16,000(P3). This doubling is represented in the mean returns as well: $600 to $1,200 to $3,000. From this model, it seems that each portfolio is scaled similarly-- the decision would come down to how long does the invester want to play in this market with this money.   
+
+
+
+## Market Segment Problem
+
+Summary of Social Marketing Data
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+sm = read.csv('social_marketing.csv')
+summary(sm)
+
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+sm <- sm[,-c(1,6,36,37)]
+
+```
+
+Comments: chatter and uncategorized are similar so get rid of one of them- I got rid of uncategorized.I also go rid of spam and adult and ID for easier analysis.
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+boxplot(sm)
+```
+
+ Comments: In this we see the various anamolies for each variable-- interesting: all the outliers are only positive ones
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+corrplot(cor(sm))
+```
+
+Comments: 
+we see some high correlations for: 
+- politics and travel
+- college/uni and online gaming
+- personal fitness and health_nutrition
+- fashion and cooking
+- beauty and fashion
+- parenting and religion
+- religion and politcs
+- news and politics
+- shopping chatter
+
+#### K-Means Approach
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+sm_scale = scale(sm)
+set.seed(10)
+
+k.max <- 20
+data <- sm_scale
+wss <- sapply(1:k.max, 
+              function(k){kmeans(data, k, nstart=50,iter.max = 15 )$tot.withinss})
+wss
+plot(1:k.max, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+
+```
+
+Comments: Started the k-means algorithm-- plot shows the minimization of the sum of squares for the various number of clusters up to the max of 20.
+Looks like 10 is the best cluster size.
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+clusters <- kmeans(sm, 10, nstart = 25)
+plotcluster(data, clusters$cluster)
+
+```
+
+Comments: This graph plots the various clusters created and is displayed by the cluster number they are in. It looks relatively split and grouped well.
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+
+clusplot(data, clusters$cluster, color=TRUE, shade=TRUE, 
+         labels=2, lines=0)
+```
+
+Comments: Gross and messy graph- probably not usable or interpretable
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+sm$clust <- as.factor(clusters$cluster)
+str(clusters)
+```
+
+Comments: Here is the summary of the clusters created. We can see the sizes and other attributes.
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+sm_1 = sm[sm$clust == 1,]
+sm_2 = sm[sm$clust == 2,]
+sm_3 = sm[sm$clust == 3,]
+sm_4 = sm[sm$clust == 4,]
+sm_5 = sm[sm$clust == 5,]
+sm_6 = sm[sm$clust == 6,]
+sm_7 = sm[sm$clust == 7,]
+sm_8 = sm[sm$clust == 8,]
+sm_9 = sm[sm$clust == 9,]
+sm_10 = sm[sm$clust == 10,]
+par(mfrow = c(1, 1))
+
+plot_cluster <- function(sm_cl){
+  plot((colSums(sm_cl[,-34])), ylab='Frequency of Tweets')
+  points(order(colSums(sm_cl[,-34]), decreasing = TRUE)[1:3], value(colSums(sm_cl[,-34]))[order(colSums(sm_cl[,-34]),decreasing=TRUE)[1:3]], pch=19)
+  text((order(colSums(sm_cl[,-34]), decreasing = TRUE)[1:3]), value(colSums(sm_cl[,-34]))[order(colSums(sm_cl[,-34]),decreasing=TRUE)[1:3]],labels=names(colSums(sm_cl[,-34]))[order(colSums(sm_cl[,-34]),decreasing=TRUE)[1:3]])
+}
+
+```
+
+Top 3 categories for cluster 1: `r plot_cluster(sm_1)`
+Top 3 categories for cluster 2: `r plot_cluster(sm_2)`
+Top 3 categories for cluster 3: `r plot_cluster(sm_3)`
+Top 3 categories for cluster 4: `r plot_cluster(sm_4)`
+Top 3 categories for cluster 5: `r plot_cluster(sm_5)`
+Top 3 categories for cluster 6: `r plot_cluster(sm_6)`
+Top 3 categories for cluster 7: `r plot_cluster(sm_7)`
+Top 3 categories for cluster 8: `r plot_cluster(sm_8)`
+Top 3 categories for cluster 9: `r plot_cluster(sm_9)`
+Top 3 categories for cluster 10: `r plot_cluster(sm_10)`
+
+
+Other methods tried:
+
+#### PCA
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+pc1 = prcomp(sm[-34], scale. = TRUE)
+summary(pc1)
+plot(pc1, col=rainbow(20))
+
+```
+
+Comments: Shows the variance of PC1
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+
+loadings = pc1$rotation
+scores = pc1$x
+qplot(scores[,1], scores[,2], color=colnames(sm)[max.col(sm,ties.method="first")], xlab='Component 1', ylab='Component 2')
+
+```
+
+Comments: Here we see the PC1 vs PC2 plot. The points are colored by the corresponding category it is in. We can see that green and orange points are more towards the left negative and purple and blue more towards the right positive.
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+plot(summary(pc1)$importance[3,], ylab="Cumulative Proportion", xlab="Principal Component ", col="brown3")
+
+```
+
+Comments: This graph shhows the cumulative proportion against the PC-- it looks like between 15 and 20 would be the ideal number of components.
+
+
+#### Hierarchical Clustering
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+
+# Extract the centers and scales from the rescaled data (which are named attributes)
+mu = attr(sm_scale,"scaled:center")
+sigma = attr(sm_scale,"scaled:scale")
+
+# First form a pairwise distance matrix
+distance_between_points = dist(sm)
+
+# Now run hierarchical clustering
+h1 = hclust(distance_between_points, method='complete')
+
+# Cut the tree into 10 clusters
+cluster1 = cutree(h1, k=10)
+summary(factor(cluster1))
+
+```
+
+Comments: The summary shows the sizes of the different clusters-- I don't like it that much due to how different the sizes are.
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+# Plot the dendrogram
+plot(h1, cex=0.9)
+```
+
+Comments: plot of the dendrogram
+
+
+## Report
+
+In my analysis, I found k-means to be the most appropriate and usable given my knowledge. I split the data into 10 clusters-- in the voice of the business, these would be the 10 market segments. I only plotted the top 3 max frequencies of tweets for each category, but ideally we would do a little more cleaning and retrieve the medians of each category for frequency. This would then show us how each category would be different. But using the analysis I found, we would market towards the higher frequency categories based on the clusters. I found many had chatter as a top contender so it seems that it would be helpful to create more categories to break down chatter even more. 
+
+
+
+
+
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+```
+
+
+
