@@ -31,8 +31,17 @@ rnorm(10)
 
 ## Problem A
 
+```{r echo=FALSE, message = FALSE}
+
+```
+
 
 ## Problem B
+
+```{r echo=FALSE, message = FALSE}
+
+```
+
 
 
 ## Exploratory Analysis: green buildings
@@ -649,6 +658,8 @@ str(clusters)
 
 Comments: Here is the summary of the clusters created. We can see the sizes and other attributes.
 
+
+Top 3 Categories for Cluster 1
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 sm_1 = sm[sm$clust == 1,]
 sm_2 = sm[sm$clust == 2,]
@@ -668,18 +679,55 @@ plot_cluster <- function(sm_cl){
   text((order(colSums(sm_cl[,-34]), decreasing = TRUE)[1:3]), value(colSums(sm_cl[,-34]))[order(colSums(sm_cl[,-34]),decreasing=TRUE)[1:3]],labels=names(colSums(sm_cl[,-34]))[order(colSums(sm_cl[,-34]),decreasing=TRUE)[1:3]])
 }
 
+plot_cluster(sm_1)
 ```
 
-Top 3 categories for cluster 1: `r plot_cluster(sm_1)`
-Top 3 categories for cluster 2: `r plot_cluster(sm_2)`
-Top 3 categories for cluster 3: `r plot_cluster(sm_3)`
-Top 3 categories for cluster 4: `r plot_cluster(sm_4)`
-Top 3 categories for cluster 5: `r plot_cluster(sm_5)`
-Top 3 categories for cluster 6: `r plot_cluster(sm_6)`
-Top 3 categories for cluster 7: `r plot_cluster(sm_7)`
-Top 3 categories for cluster 8: `r plot_cluster(sm_8)`
-Top 3 categories for cluster 9: `r plot_cluster(sm_9)`
-Top 3 categories for cluster 10: `r plot_cluster(sm_10)`
+Top 3 Categories for Cluster 2
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+plot_cluster(sm_2)
+```
+
+Top 3 Categories for Cluster 3
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+plot_cluster(sm_3)
+```
+
+Top 3 Categories for Cluster 4
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+plot_cluster(sm_4)
+```
+
+Top 3 Categories for Cluster 5
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+plot_cluster(sm_5)
+```
+
+Top 3 Categories for Cluster 6
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+plot_cluster(sm_6)
+```
+
+Top 3 Categories for Cluster 7
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+plot_cluster(sm_7)
+```
+
+Top 3 Categories for Cluster 8
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+plot_cluster(sm_8)
+```
+
+Top 3 Categories for Cluster 9
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+plot_cluster(sm_9)
+```
+
+Top 3 Categories for Cluster 10
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+plot_cluster(sm_10)
+```
+
+
 
 
 Other methods tried:
